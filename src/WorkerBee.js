@@ -69,7 +69,7 @@
     };
 
     wb.guId = guId;
-//==================================================================
+//======================wb.prototype============================================
     /**
      *
      *
@@ -127,7 +127,7 @@
             return list.hasOwnProperty(key)?list[key]:(void 0);
         }
     };
-//============================================================================
+//============================createCore()================================================
     /**
      * create a namespace.
      * @param libName {String}
@@ -172,7 +172,7 @@
 
         return newCore;
     };
-//=========================================================================
+//==========================WBManager===============================================
     var WBManager = {
         prototype:{},
         init:function(obj){
@@ -190,7 +190,7 @@
         }
     };
     wb.WBManager = WBManager;
-//===========================================================================
+//=============================WBObjectManager==============================================
     /**
      *
      */
@@ -248,7 +248,7 @@
         }
     });
     wb.WBObjectManager = WBObjectManager;
-//=========================================================================
+//========================WBEventManager=================================================
     var WBEventManager = WBManager.init({
         LIST_TYPE:"event"
     });
@@ -262,7 +262,7 @@
         }
     });
     wb.WBEventManager = WBEventManager;
-//==========================================================================
+//=====================WBFrameManager=====================================================
     var WBFrameManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.FRAME
     });
@@ -272,7 +272,7 @@
         }
     });
     wb.WBFrameManager = WBFrameManager;
-//===========================================================================
+//====================WBLogManager=======================================================
     var WBLogManager = WBManager.init({
         LIST_TYPE:"log"
     });
@@ -285,13 +285,7 @@
         }
     });
     wb.WBLogManager = WBLogManager;
-//===========================================================================
-
-    // var wb_object_prototype = {
-    //     output:function(){},
-    //     terminalClear:function(){},
-    //     destroyObject:function(){}
-    // };
+//========================WBObjectModel===================================================
     var WBObjectModel = {
         prototype:{},
         init:function(obj){
@@ -319,7 +313,7 @@
         }
     };
     wb.WBObjectModel = WBObjectModel;
-//=====================================================================
+//=========================WBObject============================================
 
     var WBObject = WBObjectModel.init({
         className:"Object"
@@ -334,19 +328,7 @@
         }
     });
     wb.WBObject = WBObject;
-
-    /*wb.WBObject = function(){
-        var obj = wb.createObject(wb_object_prototype);
-        obj.fn = obj.prototype = wb_object_prototype;
-        obj[GU_PREV+"Id"] = guId();
-        var OM = this.OM;
-        console.log("this.OM---->",this,this.OM);
-        if(this.OM){
-            this.OM.addObject(obj);
-        }
-        return obj;
-    };*/
-//===============================================================================
+//=========================WBEventDispatcher======================================================
     var WBEventDispatcher = WBObject.init({
         className:"EventDispatcher"
     });
@@ -362,22 +344,6 @@
         }
     });
     wb.WBEventDispatcher = WBEventDispatcher;
-    /*var wb_EventDispatcher_prototype = {
-        addEventListener:function(type,handler,scope,data){},
-        removeEventListener:function(type,handler){},
-        hasEventListener:function(type){},
-        dispatchEvent:function(type,data){},
-        on:function(){},
-        off:function(){},
-        trigger:function(){}
-    };
-    wb.WBEventDispatcher = function(){
-        var prototype = wb.WBObject.call(this);
-        wb.extend(prototype,wb_EventDispatcher_prototype);
-        var obj = wb.createObject(prototype);
-        obj.fn = obj.prototype = prototype;
-        return obj;
-    };*/
 //==============================================================================
     return wb;
 });
