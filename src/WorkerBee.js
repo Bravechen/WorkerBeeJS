@@ -33,9 +33,10 @@
     };
 //=========================================================================
     /**
+     * 根据原型创建对象。使用原生的'Object.create'或者polyfill实现。
      * create object use 'Object.create' in ES5 or polyfill.
-     * @param prototype
-     * @returns {*}
+     * @param prototype {Object} [necessary]
+     * @returns {Object}
      */
     wb.createObject = function(prototype){
         if(typeof nativeCreate === "function"){
@@ -47,7 +48,8 @@
         return newClass;
     };
     /**
-     *
+     * 混合对象
+     * mixin two objects
      * @param target {Object} [necessary]
      * @param src {Object} [necessary]
      */
@@ -60,7 +62,11 @@
             }
         }
     };
-
+    /**
+     * 产生一个guid
+     * generate a guid
+     * @returns {string}
+     */
     var guId = function(){
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
@@ -76,7 +82,8 @@
      */
     wb.prototype = {
         /**
-         * save an object in objectList
+         * 保存一个对象至对应列表中
+         * save an object in a type list
          * @param key {String} [necessary]
          * @param obj {Object} [necessary]
          * @param listType {String} [necessary]
@@ -99,7 +106,8 @@
             return true;
         },
         /**
-         * delete an object from objectList
+         * 从对应列表中删除一个对象
+         * delete an object from a type list
          * @param key {String} [necessary]
          * @param listType {String} [necessary]
          */
@@ -114,7 +122,8 @@
             }
         },
         /**
-         * get an item from objectList
+         * 从对应列表中获取一个对象
+         * get an item from a type list
          * @param key {String} [necessary]
          * @param listType {String} [necessary]
          * @returns {Object/undefined}
@@ -129,10 +138,17 @@
     };
 //============================createCore()================================================
     /**
+     * 创建一个命名空间或核心对象
      * create a namespace.
-     * @param libName {String}
-     * @param shortName {String}
-     * @returns {Object} A namespace you want.
+     * @param libName {String} [optional]
+     * 可选，不过框架总该有个名字吧
+     * Optional, but framework should have a name,right?
+     * @param shortName {String} [optional]
+     * 可选，不过框架总该有个简写吧
+     * Optional, but framework should have a shorthand,right?
+     * @returns {Object}
+     * 命名空间或核心对象
+     * A namespace you want.
      */
     wb.createCore = function(libName,shortName){
 
@@ -286,14 +302,35 @@
     });
     wb.WBLogManager = WBLogManager;
 //========================WBObjectModel===================================================
+    /**
+     * 对象通用模型
+     * The object model
+     *
+     * @type {Object}
+     */
     var WBObjectModel = {
+        /**
+         *
+         */
         prototype:{},
+        /**
+         * 创建一个对象模型
+         * Create an object model
+         * @param obj
+         * @returns {*}
+         */
         init:function(obj){
             var objectModel = wb.createObject(this);
             objectModel.fn = this;
             wb.extend(objectModel,obj);
             return objectModel;
         },
+        /**
+         * 创建一个基于模型对象的prototype可以生产实例对象的工厂函数
+         * Create an factory function base on an object model's prototype
+         * @param master
+         * @returns {Function} 工厂函数 factory function
+         */
         create:function(master){
             var that = this;
             return function(option){
@@ -314,7 +351,6 @@
     };
     wb.WBObjectModel = WBObjectModel;
 //=========================WBObject============================================
-
     var WBObject = WBObjectModel.init({
         className:"Object"
     });
@@ -327,6 +363,9 @@
             destroyObject:function(){}
         }
     });
+    /**
+     * 对象
+     */
     wb.WBObject = WBObject;
 //=========================WBEventDispatcher======================================================
     var WBEventDispatcher = WBObject.init({
@@ -343,6 +382,9 @@
             trigger:function(){}
         }
     });
+    /**
+     * 事件派发者
+     */
     wb.WBEventDispatcher = WBEventDispatcher;
 //==============================================================================
     return wb;
