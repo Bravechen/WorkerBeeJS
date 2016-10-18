@@ -12,15 +12,15 @@
     }
 })(window || this,function(){
     "use strict";
+//========================================================================
     var wb = {};
     wb.VERSION = "0.0.0";
 //========================================================================
     var nativeCreate = Object.create;
     var CtrFn = function(){};
-    var LEN = "length";
-    var GU_PREV = "gu";
-    var GU_ID = "guId";
-//=========================================================================
+    var LEN = "length",
+        GU_ID = "guId";
+//========================================================================
     wb.ConstUtil = {
         EVENT:"event",
         OBJECT:"object",
@@ -31,7 +31,7 @@
             ERROR:0xe0e0e0
         }
     };
-//=========================================================================
+//========================================================================
     /**
      * 根据原型创建对象。使用原生的'Object.create'或者polyfill实现。
      * create object use 'Object.create' in ES5 or polyfill.
@@ -75,7 +75,7 @@
     };
 
     wb.guId = guId;
-//======================wb.prototype============================================
+//======================wb.prototype======================================
     /**
      *
      *
@@ -136,16 +136,19 @@
             return list.hasOwnProperty(key)?list[key]:(void 0);
         }
     };
-//============================createCore()================================================
+//============================createCore()================================
     /**
      * 创建一个命名空间或核心对象
      * create a namespace.
+     *
      * @param libName {String} [optional]
      * 可选，不过框架总该有个名字吧
      * Optional, but framework should have a name,right?
+     *
      * @param shortName {String} [optional]
      * 可选，不过框架总该有个简写吧
      * Optional, but framework should have a shorthand,right?
+     *
      * @returns {Object}
      * 命名空间或核心对象
      * A namespace you want.
@@ -157,25 +160,23 @@
             event : {length:0},
             frame : {length:0},
             log : {length:0}
-        };
-
-        var includeProto = {
+        },
+            includeProto = {
             internal_getList:function(listType){
                 return  sysList[listType] || false;
             }
-        };
+        },
+            constUtil = wb.ConstUtil,
+            newCore;
 
         wb.extend(includeProto,wb.prototype);
 
-        var newCore = wb.createObject(includeProto);
-
+        newCore = wb.createObject(includeProto);
         //debug mode,true is open,false is close.default is true.
         newCore.debug = true;
-
         newCore.libName = libName?libName:(void 0);
         newCore.shortName = shortName?shortName:(void 0);
 
-        var constUtil = wb.ConstUtil;
         wb.extend(newCore,{
             id:guId(),
             OM:WBObjectManager.create(newCore),
@@ -188,7 +189,7 @@
 
         return newCore;
     };
-//==========================WBManager===============================================
+//==========================WBManager=====================================
     var WBManager = {
         prototype:{},
         init:function(obj){
@@ -205,11 +206,13 @@
             return obj;
         }
     };
-    wb.WBManager = WBManager;
-//=============================WBObjectManager==============================================
     /**
-     *
+     * 通用管理者工厂模型
+     * @type {{prototype: {}, init: WBManager.init, create: WBManager.create}}
      */
+    wb.WBManager = WBManager;
+//=============================WBObjectManager============================
+
     var WBObjectManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.OBJECT
     });
@@ -219,7 +222,7 @@
             addObject:function(obj){
                 var master = this.master,listType = this.parent.LIST_TYPE;
                 if(!obj || !obj[GU_ID] || this.inGNList(obj[GU_ID])) {
-                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(obj[GU_ID]));
+                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(obj[GU_ID])); //替换成log
                     return false;
                 }
                 return master.wb_save(obj[GU_ID],obj,listType);
@@ -263,8 +266,11 @@
             }
         }
     });
+    /**
+     * 对象管理者工厂模型
+     */
     wb.WBObjectManager = WBObjectManager;
-//========================WBEventManager=================================================
+//========================WBEventManager==================================
     var WBEventManager = WBManager.init({
         LIST_TYPE:"event"
     });
@@ -277,8 +283,11 @@
             dispatchEventFrom:function(){}
         }
     });
+    /**
+     * 事件管理者工厂模型
+     */
     wb.WBEventManager = WBEventManager;
-//=====================WBFrameManager=====================================================
+//=====================WBFrameManager=====================================
     var WBFrameManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.FRAME
     });
@@ -287,8 +296,11 @@
 
         }
     });
+    /**
+     * 帧循环管理者工厂模型
+     */
     wb.WBFrameManager = WBFrameManager;
-//====================WBLogManager=======================================================
+//====================WBLogManager========================================
     var WBLogManager = WBManager.init({
         LIST_TYPE:"log"
     });
@@ -300,10 +312,13 @@
             clearAllLog:function(){}
         }
     });
-    wb.WBLogManager = WBLogManager;
-//========================WBObjectModel===================================================
     /**
-     * 对象通用模型
+     * 日志管理者工厂模型
+     */
+    wb.WBLogManager = WBLogManager;
+//========================WBObjectModel===================================
+    /**
+     * 通用对象模型
      * The object model
      *
      * @type {Object}
@@ -350,7 +365,7 @@
         }
     };
     wb.WBObjectModel = WBObjectModel;
-//=========================WBObject============================================
+//=========================WBObject=======================================
     var WBObject = WBObjectModel.init({
         className:"Object"
     });
@@ -364,10 +379,10 @@
         }
     });
     /**
-     * 对象
+     * 对象工厂模型
      */
     wb.WBObject = WBObject;
-//=========================WBEventDispatcher======================================================
+//=========================WBEventDispatcher==============================
     var WBEventDispatcher = WBObject.init({
         className:"EventDispatcher"
     });
@@ -383,9 +398,9 @@
         }
     });
     /**
-     * 事件派发者
+     * 事件派发者工厂模型
      */
     wb.WBEventDispatcher = WBEventDispatcher;
-//==============================================================================
+//========================================================================
     return wb;
 });
