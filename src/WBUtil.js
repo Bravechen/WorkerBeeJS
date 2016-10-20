@@ -13,11 +13,16 @@
 
     var nativeIsArray = Array.isArray();
 
-    wb.isArray = function(obj){
+    var isArray = function(obj){
         if(nativeIsArray){
             return nativeIsArray(obj);
         }
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
+
+    return{
+        isArray:isArray
+
+    }    
 
 });

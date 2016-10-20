@@ -220,12 +220,12 @@
         prototype:{
             master:null,
             addObject:function(obj){
-                var master = this.master,listType = this.parent.LIST_TYPE;
-                if(!obj || !obj[GU_ID] || this.inGNList(obj[GU_ID])) {
-                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(obj[GU_ID])); //替换成log
+                var master = this.master,listType = this.parent.LIST_TYPE,id;
+                if(!obj || !obj[GU_ID] || this.inGNList((id = obj[GU_ID]()))) {
+                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(id)); //替换成log
                     return false;
                 }
-                return master.wb_save(obj[GU_ID],obj,listType);
+                return master.wb_save(id,obj,listType);
             },
             /**
              *
@@ -272,12 +272,90 @@
     wb.WBObjectManager = WBObjectManager;
 //========================WBEventManager==================================
     var WBEventManager = WBManager.init({
-        LIST_TYPE:"event"
+        LIST_TYPE:wb.ConstUtil.EVENT
     });
     wb.extend(WBEventManager.fn,{
         prototype:{
-            addEventFrom:function(){},
-            removeEventFrom:function(){},
+            master:null,
+            /**
+             *
+             * @param type
+             * @param guid
+             * @param handler
+             * @param data
+             */
+            addEventFrom:function(type, guid, handler, data){
+                var id = guid + "_" + type,
+                    listType = this.parent.LIST_TYPE,
+                    list = this.master.internal_getList(listType),
+                    item = list[id] || {filled:false},
+                    handlers,
+                    datas,
+                    length,
+                    index;
+
+                if(!item.filled){
+                    item.type = type;
+                    item.guid = guid;
+                    item.handlers = [handler];
+                    item.datas = [(!data?null:data)];
+                    item.filled = true;
+                    master.wb_save(id,item,listType);
+                }else{
+                    handlers = item.handlers;
+                    length = handlers.length;
+                    datas = item.datas;
+                    index = handlers.indexOf(handler);
+                    if(index>-1){
+                        if(data){
+                            datas[index] = data;
+                        }
+                    }else{
+                        handlers[length] = handler;
+                        datas[length] = !data?null:data;
+                    }
+                }
+            },
+            /**
+             *
+             * @param type
+             * @param guid
+             * @param handler
+             * @returns {boolean}
+             */
+            removeEventFrom:function(type, guid, handler){
+                var id = guid + "_" + type,
+                    master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    eventFrom = master.wb_find(id,listType),
+                    handlers,
+                    datas,
+                    index;
+                    //list = this.master.internal_getList(listType),
+                    //eventFrom = list[id];
+                if (!eventFrom || handler) {
+                    return false;
+                }
+                handlers = eventFrom.handlers;
+                if(handlers && handlers.length>0){
+                    datas = eventFrom.datas;
+                    index = handlers.indexOf(handler);
+                    if(index>-1){
+                        handlers.splice(index,1);
+                        datas.splice(index,1);
+                    }
+                }
+                //如果处理器列表已为空，移除该事件源对象
+                if(!handlers || handlers.length<=0){
+                    eventFrom.type = null;
+                    eventFrom.gnId = null;
+                    eventFrom.handlers = null;
+                    eventFrom.datas = null;
+                    eventFrom.has = null;
+                    master.wb_destroy(id,listType);
+                }
+                return true;
+            },
             getEventFrom:function(){},
             hasEventFrom:function(){},
             dispatchEventFrom:function(){}
@@ -293,7 +371,7 @@
     });
     wb.extend(WBFrameManager,{
         prototype:{
-
+            master:null,
         }
     });
     /**
@@ -306,6 +384,7 @@
     });
     wb.extend(WBLogManager,{
         prototype:{
+            master:null,
             addLog:function(){},
             showAllLog:function(){},
             showLastLog:function(){},
@@ -352,9 +431,15 @@
                 var obj = wb.createObject(that.fn.prototype);
                 obj.fn = that.fn.prototype;
                 obj.parent = that;
+                console.log("that:",that);
                 obj.className = (this.libName?this.libName+".":"TheFramework")+
                     (this.shortName?this.shortName.toUpperCase():"")+that.className;
-                obj[GU_ID] = guId();
+                //obj[GU_ID] = guId();
+                var guid = guId();
+                //提供特权方法，访问私有属性guid
+                obj[GU_ID] = function(){
+                    return guid;
+                };
                 wb.extend(that.prototype,option); //可以使用Object.keys()优化，将2步混合一个循环合并完成
                 wb.extend(obj,that.prototype);
                 if(master.OM){
@@ -372,7 +457,7 @@
     wb.extend(WBObject,{
         prototype:{
             output:function(){
-                return "["+(this.className?this.className:"")+"   "+GU_ID+":"+ this[GU_ID] +"]";
+                return "["+(this.className?this.className:"")+"   "+GU_ID+":"+ this[GU_ID]() +"]";
             },
             terminalClear:function(){},
             destroyObject:function(){}
@@ -391,10 +476,7 @@
             addEventListener:function(type,handler,scope,data){},
             removeEventListener:function(type,handler){},
             hasEventListener:function(type){},
-            dispatchEvent:function(type,data){},
-            on:function(){},
-            off:function(){},
-            trigger:function(){}
+            dispatchEvent:function(type,data){}
         }
     });
     /**

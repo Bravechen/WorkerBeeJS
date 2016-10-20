@@ -3,7 +3,7 @@
 
     QUnit.test("create a Framework,and name libName and shortName for it.",function(assert){
         var gardener = wb.createCore("gardener","gn");
-        //console.log(gardener);
+        console.log("gardener:",gardener);
         //console.log(gardener.OM);
         assert.ok(gardener.libName === "gardener","libName passed.");
         assert.ok(gardener.shortName === "gn","shortName passed.");
@@ -27,20 +27,22 @@
         assert.ok(ClassA.wb_find("qwe",constUtil.OBJECT) === undefined,"delete a obj from list is ok");
     });
 
-    var ClassC = wb.createCore("ClassC","cc");
-    console.log("ClassC",ClassC);
+   var ClassC = wb.createCore("ClassC","cc");
+    //console.log("ClassC",ClassC);
     ClassC.CCObject = wb.WBObject.create(ClassC);
     var ccObj = ClassC.CCObject({
         initialize:function(){},
         ccId:""
     });
-    console.log(ccObj);
+    //console.log(ccObj);
     console.info(ccObj.output());
     ClassC.CCEventDispatcher = wb.WBEventDispatcher.create(ClassC);
-    console.log("ClassC.CCEventDispatcher",ClassC.CCEventDispatcher);
+
+    //console.log("ClassC.CCEventDispatcher",ClassC.CCEventDispatcher);
     var ccEventDispatcher = ClassC.CCEventDispatcher();
-    console.log("ccEventDispatcher instance--->",ccEventDispatcher);
+    console.log("ccEventDispatcher instance--->"/*,ccEventDispatcher*/);
     console.info(ccEventDispatcher.output());
-    console.log(ClassC.internal_getList(wb.ConstUtil.OBJECT));
+    console.log("internal list:",ClassC.internal_getList(wb.ConstUtil.OBJECT));
+    ccEventDispatcher.addEventListener("abc",function(){});
 
 })(WorkerBee,QUnit);
