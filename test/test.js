@@ -12,6 +12,9 @@
     QUnit.test("WorkerBee save obj in list, and destroy obj from list",function(assert){
         var ClassA = wb.createCore();
         var ClassB = wb.createCore();
+        assert.ok(ClassA.internal_getSysList() !== ClassB.internal_getSysList(),"Each framework has a unique sysList.");
+        assert.ok(true,"Framework ClassA's sysList===>"+ClassA.internal_getSysList().guid);
+        assert.ok(true,"Framework ClassB's sysList===>"+ClassB.internal_getSysList().guid);
         var constUtil = wb.ConstUtil;
         ClassB.debug = false;
         var obj1 = {name:"123"},

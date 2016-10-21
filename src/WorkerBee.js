@@ -80,62 +80,7 @@
      *
      *
      */
-    wb.prototype = {
-        /**
-         * 保存一个对象至对应列表中
-         * save an object in a type list
-         * @param key {String} [necessary]
-         * @param obj {Object} [necessary]
-         * @param listType {String} [necessary]
-         * @return {Boolean}
-         */
-        wb_save:function(key,obj,listType){
-            if(key === LEN){
-                return false;
-            }
-            var list = this.internal_getList(listType);
-            if(!list){
-                return false;
-            }
-            //is created
-            if(!list[key] && obj){
-                list.length++;
-            }
-
-            list[key] = obj;
-            return true;
-        },
-        /**
-         * 从对应列表中删除一个对象
-         * delete an object from a type list
-         * @param key {String} [necessary]
-         * @param listType {String} [necessary]
-         */
-        wb_destroy:function(key,listType){
-            if(key === LEN){
-                return;
-            }
-            var list = this.internal_getList(listType);
-            if(list[key]){
-                delete list[key];
-                list.length--;
-            }
-        },
-        /**
-         * 从对应列表中获取一个对象
-         * get an item from a type list
-         * @param key {String} [necessary]
-         * @param listType {String} [necessary]
-         * @returns {Object/undefined}
-         */
-        wb_find:function(key,listType){
-            if(key === LEN){
-                return;
-            }
-            var list = this.internal_getList(listType);
-            return list.hasOwnProperty(key)?list[key]:(void 0);
-        }
-    };
+    wb.prototype = {};
 //============================createCore()================================
     /**
      * 创建一个命名空间或核心对象
@@ -159,17 +104,81 @@
             object : {length:0},
             event : {length:0},
             frame : {length:0},
-            log : {length:0}
+            log : {length:0},
+            guid:guId()
         },
             includeProto = {
+            //only for debug
             internal_getList:function(listType){
                 return  sysList[listType] || false;
+            },
+            //only for debug
+            internal_getSysList:function(){
+                return sysList || false;
             }
         },
             constUtil = wb.ConstUtil,
             newCore;
 
-        wb.extend(includeProto,wb.prototype);
+        wb.extend(includeProto,{
+            /**
+             * 保存一个对象至对应列表中
+             * save an object in a type list
+             * @param key {String} [necessary]
+             * @param obj {Object} [necessary]
+             * @param listType {String} [necessary]
+             * @return {Boolean}
+             */
+            wb_save:function(key,obj,listType){
+                if(key === LEN){
+                    return false;
+                }
+                var list = sysList[listType];
+                if(!list){
+                    return false;
+                }
+                //is created
+                if(!list[key] && obj){
+                    list.length++;
+                }
+
+                list[key] = obj;
+                return true;
+            },
+            /**
+             * 从对应列表中删除一个对象
+             * delete an object from a type list
+             * @param key {String} [necessary]
+             * @param listType {String} [necessary]
+             */
+            wb_destroy:function(key,listType){
+                if(key === LEN){
+                    return;
+                }
+                var list = sysList[listType];
+                if(list[key]){
+                    delete list[key];
+                    list.length--;
+                }
+            },
+            /**
+             * 从对应列表中获取一个对象
+             * get an item from a type list
+             * @param key {String} [necessary]
+             * @param listType {String} [necessary]
+             * @returns {Object/undefined}
+             */
+            wb_find:function(key,listType){
+                if(key === LEN){
+                    return;
+                }
+                var list = sysList[listType];
+                return list.hasOwnProperty(key)?list[key]:(void 0);
+            },
+            wb_length:function(listType){
+                return sysList[listType].length;
+            }
+        });
 
         newCore = wb.createObject(includeProto);
         //debug mode,true is open,false is close.default is true.
@@ -262,7 +271,7 @@
              */
             length:function(){
                 var master = this.master,listType = this.parent.LIST_TYPE;
-                return master.internal_getList(listType).length;
+                return master.wb_length(listType);
             }
         }
     });
@@ -287,12 +296,11 @@
             addEventFrom:function(type, guid, handler, data){
                 var id = guid + "_" + type,
                     listType = this.parent.LIST_TYPE,
-                    list = this.master.internal_getList(listType),
-                    item = list[id] || {filled:false},
+                    master = this.master,
+                    item = master.wb_find(id,listType) || {filled:false},
                     handlers,
                     datas,
-                    length,
-                    index;
+                    length;
 
                 if(!item.filled){
                     item.type = type;
@@ -305,15 +313,8 @@
                     handlers = item.handlers;
                     length = handlers.length;
                     datas = item.datas;
-                    index = handlers.indexOf(handler);
-                    if(index>-1){
-                        if(data){
-                            datas[index] = data;
-                        }
-                    }else{
-                        handlers[length] = handler;
-                        datas[length] = !data?null:data;
-                    }
+                    handlers[length] = handler;
+                    datas[length] = !data?null:data;
                 }
             },
             /**
@@ -330,23 +331,25 @@
                     eventFrom = master.wb_find(id,listType),
                     handlers,
                     datas,
-                    index;
-                    //list = this.master.internal_getList(listType),
-                    //eventFrom = list[id];
+                    index,k=0;
                 if (!eventFrom || handler) {
                     return false;
                 }
                 handlers = eventFrom.handlers;
                 if(handlers && handlers.length>0){
                     datas = eventFrom.datas;
-                    index = handlers.indexOf(handler);
-                    if(index>-1){
-                        handlers.splice(index,1);
-                        datas.splice(index,1);
+                    for(var i=0,len=handlers.length;i<len;i++){
+                        if(handler === handlers[i]){
+                            handlers[i] = null;
+                            datas[i] = null;
+                        }
+                        if(!handlers[i]){
+                            k++;
+                        }
                     }
                 }
                 //如果处理器列表已为空，移除该事件源对象
-                if(!handlers || handlers.length<=0){
+                if(!handlers || handlers.length<=0 || k>=handlers.length){
                     eventFrom.type = null;
                     eventFrom.gnId = null;
                     eventFrom.handlers = null;
@@ -356,9 +359,33 @@
                 }
                 return true;
             },
-            getEventFrom:function(){},
-            hasEventFrom:function(){},
-            dispatchEventFrom:function(){}
+            /**
+             *
+             * @param type
+             * @param guid
+             * @returns {*|Object|undefined}
+             */
+            getEventFrom:function(type,guid){
+                var master = this.master,
+                    id = guid + "_" + type,
+                    listType = this.parent.LIST_TYPE;
+                return master.wb_find(id,listType);
+            },
+            /**
+             *
+             * @param type
+             * @param guid
+             * @returns {boolean}
+             */
+            hasEventFrom:function(type,guid){
+                var master = this.master,
+                    id = guid + "_" + type,
+                    listType = this.parent.LIST_TYPE;
+                return !!master.wb_find(id,listType);
+            },
+            dispatchEventFrom:function(type,guid){
+
+            }
         }
     });
     /**
@@ -431,7 +458,6 @@
                 var obj = wb.createObject(that.fn.prototype);
                 obj.fn = that.fn.prototype;
                 obj.parent = that;
-                console.log("that:",that);
                 obj.className = (this.libName?this.libName+".":"TheFramework")+
                     (this.shortName?this.shortName.toUpperCase():"")+that.className;
                 //obj[GU_ID] = guId();
