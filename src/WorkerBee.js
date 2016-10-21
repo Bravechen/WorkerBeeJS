@@ -286,6 +286,7 @@
     wb.extend(WBEventManager.fn,{
         prototype:{
             master:null,
+            SEPARATOR:"_",
             /**
              *
              * @param type
@@ -294,7 +295,7 @@
              * @param data
              */
             addEventFrom:function(type, guid, handler, data){
-                var id = guid + "_" + type,
+                var id = guid + this.SEPARATOR + type,
                     listType = this.parent.LIST_TYPE,
                     master = this.master,
                     item = master.wb_find(id,listType) || {filled:false},
@@ -325,7 +326,7 @@
              * @returns {boolean}
              */
             removeEventFrom:function(type, guid, handler){
-                var id = guid + "_" + type,
+                var id = guid + this.SEPARATOR + type,
                     master = this.master,
                     listType = this.parent.LIST_TYPE,
                     eventFrom = master.wb_find(id,listType),
@@ -367,7 +368,7 @@
              */
             getEventFrom:function(type,guid){
                 var master = this.master,
-                    id = guid + "_" + type,
+                    id = guid + this.SEPARATOR + type,
                     listType = this.parent.LIST_TYPE;
                 return master.wb_find(id,listType);
             },
@@ -379,13 +380,42 @@
              */
             hasEventFrom:function(type,guid){
                 var master = this.master,
-                    id = guid + "_" + type,
+                    id = guid + this.SEPARATOR + type,
                     listType = this.parent.LIST_TYPE;
                 return !!master.wb_find(id,listType);
             },
+            /**
+             *
+             * @param type
+             * @param guid
+             * @returns {boolean}
+             */
             dispatchEventFrom:function(type,guid){
-
+                var master = this.master,
+                    id = guid + this.SEPARATOR + type,
+                    listType = this.parent.LIST_TYPE,
+                    eventFrom = master.wb_find(id,listType),handlers,datas,i,len;
+                if(!eventFrom){
+                    //log...
+                    return false;
+                }
+                handlers = eventFrom.handlers;
+                datas = eventFrom.datas;
+                var fn,data,event;
+                for(i=0,len=handlers.length;i<len;i++){
+                    fn = handlers[i];
+                    if(!fn || typeof fn !== 'function'){
+                        continue;
+                    }
+                    data = datas[i];
+                    event = {
+                        type:type,
+                        data:data
+                    };
+                    fn(event);
+                }
             }
+
         }
     });
     /**
