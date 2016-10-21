@@ -175,6 +175,11 @@
                 var list = sysList[listType];
                 return list.hasOwnProperty(key)?list[key]:(void 0);
             },
+            /**
+             * 对应列表的元素总数
+             * @param listType {String} [necessary]
+             * @returns {Number}
+             */
             wb_length:function(listType){
                 return sysList[listType].length;
             }

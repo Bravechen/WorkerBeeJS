@@ -20,19 +20,25 @@ WorkerBee版本号
 
 保存一个对象到对应列表中
 
-==此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。==
+**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
 
 #### wb_destroy
 
 销毁一个对象到对应列表中
 
-==此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。==
+**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
 
 #### wb_find
 
 从对应列表中查找一个对象
 
-==此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。==
+**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
+
+#### wb_length
+
+从对应列表的对象数量
+
+**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
 
 ---
 
