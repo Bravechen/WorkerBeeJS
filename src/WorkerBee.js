@@ -293,29 +293,34 @@
              * @param guid
              * @param handler
              * @param data
+             * @param scope
              */
-            addEventFrom:function(type, guid, handler, data){
+            addEventFrom:function(type, guid, handler, data, scope){
                 var id = guid + this.SEPARATOR + type,
                     listType = this.parent.LIST_TYPE,
                     master = this.master,
                     item = master.wb_find(id,listType) || {filled:false},
+                    handlerItem,
                     handlers,
                     datas,
                     length;
 
+                handlerItem = {
+                    cb:handler,
+                    data:!data?null:data,
+                    scope:scope
+                };
+
                 if(!item.filled){
                     item.type = type;
                     item.guid = guid;
-                    item.handlers = [handler];
-                    item.datas = [(!data?null:data)];
+                    item.handlers = [handlerItem];
                     item.filled = true;
                     master.wb_save(id,item,listType);
                 }else{
                     handlers = item.handlers;
                     length = handlers.length;
-                    datas = item.datas;
-                    handlers[length] = handler;
-                    datas[length] = !data?null:data;
+                    handlers[length] = handlerItem;
                 }
             },
             /**
@@ -331,18 +336,15 @@
                     listType = this.parent.LIST_TYPE,
                     eventFrom = master.wb_find(id,listType),
                     handlers,
-                    datas,
-                    index,k=0;
+                    k=0;
                 if (!eventFrom || handler) {
                     return false;
                 }
                 handlers = eventFrom.handlers;
                 if(handlers && handlers.length>0){
-                    datas = eventFrom.datas;
                     for(var i=0,len=handlers.length;i<len;i++){
-                        if(handler === handlers[i]){
+                        if(handler === handlers[i].cb){
                             handlers[i] = null;
-                            datas[i] = null;
                         }
                         if(!handlers[i]){
                             k++;
@@ -354,8 +356,7 @@
                     eventFrom.type = null;
                     eventFrom.gnId = null;
                     eventFrom.handlers = null;
-                    eventFrom.datas = null;
-                    eventFrom.has = null;
+                    eventFrom.filled = null;
                     master.wb_destroy(id,listType);
                 }
                 return true;
@@ -394,25 +395,27 @@
                 var master = this.master,
                     id = guid + this.SEPARATOR + type,
                     listType = this.parent.LIST_TYPE,
-                    eventFrom = master.wb_find(id,listType),handlers,datas,i,len;
+                    eventFrom = master.wb_find(id,listType),handlers,handlerItem,i,len;
                 if(!eventFrom){
                     //log...
                     return false;
                 }
                 handlers = eventFrom.handlers;
-                datas = eventFrom.datas;
-                var fn,data,event;
+                var fn,data,scope,event;
                 for(i=0,len=handlers.length;i<len;i++){
-                    fn = handlers[i];
+                    handlerItem = handlers[i];
+                    fn = handlerItem.cb;
                     if(!fn || typeof fn !== 'function'){
                         continue;
                     }
-                    data = datas[i];
+                    data = handlerItem.data;
+                    scope = handlerItem.scope;
                     event = {
                         type:type,
                         data:data
                     };
-                    fn(event);
+                    //If the scope is not set, the master will be used
+                    fn.call(scope?scope:master,event);
                 }
             }
 
