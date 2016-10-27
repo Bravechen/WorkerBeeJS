@@ -16,7 +16,8 @@
     var wb = {};
     wb.VERSION = "0.0.0";
 //========================================================================
-    var nativeCreate = Object.create;
+    var nativeCreate = Object.create,
+        nativeSlice = Array.prototype.slice;
     var CtrFn = function(){};
     var LEN = "length",
         GU_ID = "guId";
@@ -31,6 +32,7 @@
             ERROR:0xe0e0e0
         }
     };
+    var ConstUtil = wb.ConstUtil;
 //========================================================================
     /**
      * 根据原型创建对象。使用原生的'Object.create'或者polyfill实现。
@@ -182,6 +184,22 @@
              */
             wb_length:function(listType){
                 return sysList[listType].length;
+            },
+            /**
+             * 清空对应的列表
+             * @param listType {String} [necessary]
+             */
+            wb_clear:function(listType){
+                var oldList = sysList[listType],
+                    timer = setTimeout(function(){
+                        for(var key in oldList){
+                            if(oldList.hasOwnProperty(key)){
+                                delete oldList[key];
+                            }
+                        }
+                        clearTimeout(timer);
+                    },0);
+                sysList[listType] = {length:0};
             }
         });
 
@@ -450,10 +468,68 @@
     wb.extend(WBLogManager,{
         prototype:{
             master:null,
-            addLog:function(){},
-            showAllLog:function(){},
-            showLastLog:function(){},
-            clearAllLog:function(){}
+            LogType:{
+                WARNING:"warning",
+                ERROR:"error",
+                NORMAL:"normal"
+            },
+            /**
+             * 添加一条日志。
+             * 如果开启了debug模式，也会使用console进行输出
+             */
+            addLog:function(){
+                var listType = this.parent.LIST_TYPE,
+                    master = this.master,
+                    logType = this.LogType,
+                    args,
+                    ary = nativeSlice.call(arguments,0),
+                    date = new Date().getTime(),
+                    text= "log--"+date+":",
+                    key = master.wb_length(listType);
+                for(var i= 0,len=ary.length;i<len;i++){
+                    text+="<==|==>"+ary[i];
+                }
+                text+="\n";
+                master.wb_save(key,text,listType);
+                if(master.debug && window.console){
+                    var type = ary[ary.length-1];
+                    var methodName = type===logType.WARNING?'warn':type===logType.ERROR?'error':'log';
+                    console[methodName].apply(console,ary);
+                }
+            },
+            /**
+             * 返回由全部日志组成的一个数组
+             * @returns {Array}
+             */
+            showAllLog:function(){
+                var ary = [],
+                    listType = this.parent.LIST_TYPE,
+                    master = this.master,
+                    logType = this.LogType,
+                    length = master.wb_length(listType);
+                for(var i=0;i<length;i++){
+                    ary[i] = master.wb_find(i,listType);
+                }
+                return ary;
+            },
+            /**
+             * 返回最新保存的一条日志
+             * @returns {String}
+             */
+            showLastLog:function(){
+                var listType = this.parent.LIST_TYPE,
+                    master = this.master,
+                    length = master.wb_length(listType);
+                return master.wb_find(length-1);
+            },
+            /**
+             * 清空所有日志
+             */
+            clearAllLog:function(){
+                var listType = this.parent.LIST_TYPE,
+                    master = this.master;
+                master.wb_clear(listType);
+            }
         }
     });
     /**
