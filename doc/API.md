@@ -48,6 +48,12 @@ WorkerBee版本号
 
 **此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
 
+#### wb_listKeys
+
+返回一个由对应列表的键名组成的数组
+
+**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
+
 ---
 
 ## 方法

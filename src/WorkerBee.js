@@ -17,7 +17,8 @@
     wb.VERSION = "0.0.0";
 //========================================================================
     var nativeCreate = Object.create,
-        nativeSlice = Array.prototype.slice;
+        nativeSlice = Array.prototype.slice,
+        nativeKeys = Object.keys;
     var CtrFn = function(){};
     var LEN = "length",
         GU_ID = "guId";
@@ -103,23 +104,22 @@
     wb.createCore = function(libName,shortName){
 
         var sysList = {
-            object : {length:0},
-            event : {length:0},
-            frame : {length:0},
-            log : {length:0},
-            guid:guId()
-        },
-            includeProto = {
-            //only for debug
-            internal_getList:function(listType){
-                return  sysList[listType] || false;
+                object : {length:0},
+                event : {length:0},
+                frame : {length:0},
+                log : {length:0},
+                guid:guId()
             },
-            //only for debug
-            internal_getSysList:function(){
-                return sysList || false;
-            }
-        },
-            constUtil = wb.ConstUtil,
+            includeProto = {
+                //only for debug
+                internal_getList:function(listType){
+                    return  sysList[listType] || false;
+                },
+                //only for debug
+                internal_getSysList:function(){
+                    return sysList || false;
+                }
+            },
             newCore;
 
         wb.extend(includeProto,{
@@ -200,6 +200,27 @@
                         clearTimeout(timer);
                     },0);
                 sysList[listType] = {length:0};
+            },
+            /**
+             * 获取对应列表的键名数组
+             * @param listType {String} [necessary]
+             * @returns {Array}
+             */
+            wb_listKeys:function(listType){
+                var list = sysList[listType],
+                    keys;
+                if(nativeKeys){
+                    keys = nativeKeys(list);
+                    keys.splice(keys.indexOf('length'),1);
+                    return keys;
+                }
+                keys = [];
+                for(var key in list){
+                    if(list.hasOwnProperty(key) && key !== 'length'){
+                        keys[keys.length] = key;
+                    }
+                }
+                return keys;
             }
         });
 
@@ -215,7 +236,7 @@
             EM:WBEventManager.create(newCore),
             FM:WBFrameManager.create(newCore),
             LM:WBLogManager.create(newCore),
-            LogType:constUtil.LogType,
+            LogType:ConstUtil.LogType,
             extend:wb.extend
         });
 
@@ -450,11 +471,211 @@
     wb.WBEventManager = WBEventManager;
 //=====================WBFrameManager=====================================
     var WBFrameManager = WBManager.init({
-        LIST_TYPE:wb.ConstUtil.FRAME
+        LIST_TYPE:wb.ConstUtil.FRAME,
+        frameRate:60,
+        vendors:['ms', 'moz', 'webkit', 'o']
     });
     wb.extend(WBFrameManager,{
         prototype:{
             master:null,
+            /**
+             * 初始化帧循环管理
+             */
+            initialize:function(){
+                if(this.initialized){
+                    return;
+                }
+                this.animateRequest = null;
+                this.initialized = false;
+                this.isPlaying = false;
+
+                var vendors = this.parent.vendors,
+                    frameRate = this.parent.frameRate;
+
+                for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+                    window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+                    window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+                }
+                if(!window.requestAnimationFrame){
+                    window.requestAnimationFrame = function (callBack) {
+                        return setTimeout(callBack, 1000 / frameRate);
+                    };
+                    window.cancelAnimationFrame = function(id) {
+                        clearTimeout(id);
+                    };
+                }
+                this.initialized = true;
+
+            },
+            /**
+             * 添加帧更新监听
+             * @param handler {Function} [necessary] 处理器回调
+             * @param scope {Object} [optional] 处理器的this指向
+             * @param data {Object} [optional] 需要发送到针处理器中的数据集合
+             */
+            addFrameListener:function(handler,scope,data){
+                var master = this.master;
+                if (!handler || typeof handler !== "function") {
+                    if(master && master.LM){
+                        master.LM.addLog("In "+master.shortName+"FrameManager's addFrameListener","The params are error.",handler);
+                    }
+                    return;
+                }
+
+                this.initialize();
+
+                var frameFrom,listType = this.parent.LIST_TYPE;
+                if(!handler.frameId){
+                    frameFrom = {};
+                    frameFrom.id = parseInt(Math.random()*0xffffff+Math.random()*Math.PI).toString(16);
+                    frameFrom.handler = handler;
+                    frameFrom.scope = scope;
+                    frameFrom.data = data;
+                    master.wb_save(frameFrom.id,frameFrom,listType);
+                    frameFrom.isPlaying = true;
+                    handler.frameId = frameFrom.id;
+                }else{
+                    return;
+                }
+
+                if(!this.animateRequest){
+                    this.animateRequest = window.requestAnimationFrame(this.drawFrame);
+                    this.isPlaying = true;
+                }
+
+                return frameFrom && frameFrom.id;
+            },
+            /**
+             * 移除帧更新监听
+             * @param handler {Function} [necessary] 被注册过的处理器
+             */
+            removeFrameListener:function(handler){
+                if (!handler || typeof handler !== "function") {
+                    return;
+                }
+                this.initialize();
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    length,
+                    key = this.findFrameId(handler);
+                if(!!key){
+                    var frameFrom = master.wb_find(key,listType);
+                    frameFrom.id = null;
+                    frameFrom.handler = null;
+                    frameFrom.data = null;
+                    frameFrom.isPlaying = null;
+                    master.wb_destroy(key,listType);
+                }
+                length = master.wb_length(listType);
+                if(length<=0 && !!this.animateRequest){
+                    window.cancelAnimationFrame(this.animateRequest);
+                    this.animateRequest = null;
+                    this.isPlaying = false;
+                }
+            },
+            /**
+             * 暂停对一个处理器的帧监听
+             * @param frameId {String} [optional] 处理器id。
+             * 如果不传入任何参数，会暂停所有订阅者的响应
+             */
+            pauseFrame:function(frameId){
+                if(!this.initialized){
+                    return;
+                }
+                if(arguments.length===0){
+                    this.isPlaying = false;
+                    return;
+                }
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    frameFrom = master.wb_find(frameId,listType);
+                if(frameFrom){
+                    frameFrom.isPlaying = false;
+                }
+            },
+            /**
+             * 继续对一个处理器的帧监听
+             * @param frameId {String} [optional] 处理器id。
+             * 如果不传入任何参数，会恢复所有订阅者的响应。但是那些单独设置了暂停的处理除外。
+             */
+            continueFrame:function(frameId){
+                if(!this.initialized){
+                    return;
+                }
+                if(arguments.length===0){
+                    this.isPlaying = true;
+                    return;
+                }
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    frameFrom = master.wb_find(frameId,listType);
+                if(frameFrom && !frameFrom.isPlaying){
+                    frameFrom.isPlaying = true;
+                }
+            },
+            /**
+             * 侦听器是否已被暂停监听
+             * @param frameId {String} [optional] 处理器id。
+             * 如果不传入任何参数，会返回当前是否在进行帧循环监视
+             *
+             */
+            isPause:function(frameId){
+                if(!this.initialized){
+                    return false;
+                }
+                if(arguments.length === 0){
+                    return this.isPlaying;
+                }
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    frameFrom = master.wb_find(frameId,listType);
+                return frameFrom && !frameFrom.isPlaying;
+            },
+            /**
+             * 帧更新,可被重写
+             * @param timestamp {Number}
+             * **/
+            drawFrame:function(timestamp){
+                if(!this.initialized){
+                    return;
+                }
+                if(!this.isPlaying){
+                    return;
+                }
+                this.animateRequest = window.requestAnimationFrame(this.drawFrame);
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE,
+                    keys = master.wb_listKeys(listType),
+                    scope,
+                    item,
+                    length = keys.length;
+
+                for(var i=0;i<length;i++){
+                    if((item = master.wb_find(keys[i],listType)).isPlaying){
+                        scope = item.scope;
+                        item.handler.apply(scope?scope:undefined,[timestamp,item.data?item.data:null]);
+                    }
+                }
+            },
+            /**
+             * 处理器是否已被注册在列表中
+             * @param handler
+             * @returns {boolean}
+             */
+            findFrameId:function(handler){
+                if(handler.frameId){
+                    return handler.frameId;
+                }
+                var master = this.master,
+                    listType = this.parent.LIST_TYPE;
+                var list = master.wb_listKeys(listType);
+                for(var key in list){
+                    if(list.hasOwnProperty(key) && list[key].handler === handler){
+                        return key;
+                    }
+                }
+                return false;
+            }
         }
     });
     /**
