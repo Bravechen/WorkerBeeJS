@@ -3,8 +3,8 @@
 
     QUnit.test("create a Framework,and name libName and shortName for it.",function(assert){
         var gardener = wb.createCore("gardener","gn");
-        console.log("gardener:",gardener);
-        //console.log(gardener.OM);
+        //console.log("gardener:",gardener);
+        //console.log(gardener.libName);
         assert.ok(gardener.libName === "gardener","libName passed.");
         assert.ok(gardener.shortName === "gn","shortName passed.");
     });

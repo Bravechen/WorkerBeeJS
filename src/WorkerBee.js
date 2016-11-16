@@ -227,8 +227,8 @@
         newCore = wb.createObject(includeProto);
         //debug mode,true is open,false is close.default is true.
         newCore.debug = true;
-        newCore.libName = libName?libName:(void 0);
-        newCore.shortName = shortName?shortName:(void 0);
+        newCore.libName = typeof libName === 'string' && libName || '';
+        newCore.shortName = typeof libName === 'string' && shortName || '';
 
         wb.extend(newCore,{
             id:guId(),
