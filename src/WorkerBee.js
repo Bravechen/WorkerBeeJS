@@ -5,10 +5,10 @@
 (function(root,factory){
     if(typeof defined === "function" && defined.amd){
         // AMD.
-        defined("WorkerBee",[],factory);
+        defined([],factory);
     }else{
         // Browser globals
-        root.WorkerBee = factory.call(root,[]);
+        root.workerBee = factory();
     }
 })(window || this,function(){
     "use strict";
@@ -236,7 +236,9 @@
             FM:WBFrameManager.create(newCore),
             LM:WBLogManager.create(newCore),
             LogType:ConstUtil.LogType,
-            extend:wb.extend
+            extend:wb.extend,
+            guId:guId,
+            plugin:wb.plugin
         });
 
         return newCore;
@@ -251,8 +253,8 @@
             return manager;
         },
         create:function(master){
-            var obj = wb.createObject(this.prototype);
-            obj.fn = this.prototype;
+            var obj = {};
+            wb.extend(obj,this.prototype);
             obj.parent = this;
             obj.master = master;
             return obj;
@@ -264,23 +266,22 @@
      */
     wb.WBManager = WBManager;
 //=============================WBObjectManager============================
-
     var WBObjectManager = WBManager.init({
-        LIST_TYPE:wb.ConstUtil.OBJECT
-    });
-    wb.extend(WBObjectManager,{
+        LIST_TYPE:wb.ConstUtil.OBJECT,
         prototype:{
-            master:null,
+            /**
+             * 添加一个对象
+             */
             addObject:function(obj){
                 var master = this.master,listType = this.parent.LIST_TYPE,id;
-                if(!obj || !obj[GU_ID] || this.inGNList((id = obj[GU_ID]()))) {
+                if(!obj || !obj[GU_ID] || this.inGNList((id = obj[GU_ID]))) {
                     console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(id)); //替换成log
                     return false;
                 }
                 return master.wb_save(id,obj,listType);
             },
             /**
-             *
+             * 
              * @param id
              */
             removeObject:function(id){
@@ -324,11 +325,8 @@
     wb.WBObjectManager = WBObjectManager;
 //========================WBEventManager==================================
     var WBEventManager = WBManager.init({
-        LIST_TYPE:wb.ConstUtil.EVENT
-    });
-    wb.extend(WBEventManager.fn,{
+        LIST_TYPE:wb.ConstUtil.EVENT,
         prototype:{
-            master:null,
             SEPARATOR:"_",
             /**
              * 添加一个事件来源对象
@@ -462,8 +460,7 @@
                 }
                 return true;
             }
-
-        }
+        }      
     });
     /**
      * 事件管理者工厂模型
@@ -472,12 +469,9 @@
 //=====================WBFrameManager=====================================
     var WBFrameManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.FRAME,
-        frameRate:60,
-        vendors:['ms', 'moz', 'webkit', 'o']
-    });
-    wb.extend(WBFrameManager,{
         prototype:{
-            master:null,
+            frameRate:60,
+            vendors:['ms', 'moz', 'webkit', 'o'],
             /**
              * 初始化帧循环管理
              */
@@ -676,7 +670,7 @@
                 }
                 return false;
             }
-        }
+        }     
     });
     /**
      * 帧循环管理者工厂模型
@@ -684,11 +678,8 @@
     wb.WBFrameManager = WBFrameManager;
 //====================WBLogManager========================================
     var WBLogManager = WBManager.init({
-        LIST_TYPE:"log"
-    });
-    wb.extend(WBLogManager,{
+        LIST_TYPE:wb.ConstUtil.LOG,
         prototype:{
-            master:null,
             LogType:{
                 WARNING:"warning",
                 ERROR:"error",
@@ -753,6 +744,9 @@
             }
         }
     });
+    // wb.extend(WBLogManager,{
+        
+    // });
     /**
      * 日志管理者工厂模型
      */
@@ -766,7 +760,7 @@
      */
     var WBObjectModel = {
         /**
-         *
+         * 用于实例的原型
          */
         prototype:{},
         /**
@@ -775,10 +769,12 @@
          * @param obj
          * @returns {*}
          */
-        init:function(obj){
+        init:function(obj,instancePrototype){
             var objectModel = wb.createObject(this);
             objectModel.fn = this;
+            objectModel.prototype = wb.createObject(this.prototype);
             wb.extend(objectModel,obj);
+            wb.extend(objectModel.prototype,instancePrototype);
             return objectModel;
         },
         /**
@@ -790,19 +786,19 @@
         create:function(master){
             var that = this;
             return function(option){
-                var obj = wb.createObject(that.fn.prototype);
-                obj.fn = that.fn.prototype;
-                obj.parent = that;
+                var obj = wb.createObject(that.prototype);
+                obj.fn = that.prototype;
                 obj.className = (this.libName?this.libName+".":"TheFramework")+
                     (this.shortName?this.shortName.toUpperCase():"")+that.className;
-                //obj[GU_ID] = guId();
-                var guid = guId();
-                //提供特权方法，访问私有属性guid
-                obj[GU_ID] = function(){
-                    return guid;
-                };
-                wb.extend(that.prototype,option); //可以使用Object.keys()优化，将2步混合一个循环合并完成
-                wb.extend(obj,that.prototype);
+                
+                var guid = master.guId();
+                Object.defineProperty(obj,"guId",{
+                    get:function(){
+                        return guid;
+                    }
+                });
+    
+                wb.extend(obj,option);
                 if(master.OM){
                     master.OM.addObject(obj);
                 }
@@ -813,16 +809,14 @@
     wb.WBObjectModel = WBObjectModel;
 //=========================WBObject=======================================
     var WBObject = WBObjectModel.init({
-        className:"Object"
-    });
-    wb.extend(WBObject,{
-        prototype:{
-            output:function(){
-                return "["+(this.className?this.className:"")+"   "+GU_ID+":"+ this[GU_ID]() +"]";
-            },
-            terminalClear:function(){},
-            destroyObject:function(){}
-        }
+        className:"WBObject",
+    },{
+        initialize:function(){},
+        output:function(){
+            return "["+(this.className?this.className:"")+"   "+GU_ID+":"+ this[GU_ID] +"]";
+        },
+        terminalClear:function(){},
+        destroyObject:function(){}
     });
     /**
      * 对象工厂模型
@@ -830,20 +824,43 @@
     wb.WBObject = WBObject;
 //=========================WBEventDispatcher==============================
     var WBEventDispatcher = WBObject.init({
-        className:"EventDispatcher"
-    });
-    wb.extend(WBEventDispatcher,{
-        prototype:{
-            addEventListener:function(type,handler,scope,data){},
-            removeEventListener:function(type,handler){},
-            hasEventListener:function(type){},
-            dispatchEvent:function(type,data){}
-        }
+        className:"WBEventDispatcher"
+    },{
+        addEventListener:function(type,handler,scope,data){},
+        removeEventListener:function(type,handler){},
+        hasEventListener:function(type){},
+        dispatchEvent:function(type,data){}
     });
     /**
      * 事件派发者工厂模型
      */
     wb.WBEventDispatcher = WBEventDispatcher;
+//====================plugin==============================================
+    /**
+     * 创建一个插件
+     * @param pluginName {String} [necessary] 插件名称
+     * @param obj {Object} [optional] 插件对象本身定义
+     * @param instancePrototype {Object} [optional] 通过插件创建的实例所具有的原型
+     * @param master {Object} [optional] 所属框架或组件库的命名空间，默认是workerBee
+     * @param extendsFactory {Object} [optional] 继承对象的工厂模型对象
+     * @return {Object} 创建好的插件对象
+     */
+    wb.plugin = function(pluginName,obj,instancePrototype,master,extendsFactory){
+        if(!pluginName){
+            //warn
+            return;
+        }
+        var oFactory,factory;
+        obj = obj || {};
+        instancePrototype = instancePrototype || {};
+        master = master || this;
+        oFactory = typeof extendsFactory === 'function'?extendsFactory:wb.WBObjectModel
+        
+        factory = oFactory.init(obj,instancePrototype);
+        master[pluginName] = factory.create(master);
+        
+        return master[pluginName];
+    };
 //========================================================================
     return wb;
 });

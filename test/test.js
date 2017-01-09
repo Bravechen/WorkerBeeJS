@@ -3,8 +3,6 @@
 
     QUnit.test("create a Framework,and name libName and shortName for it.",function(assert){
         var gardener = wb.createCore("gardener","gn");
-        //console.log("gardener:",gardener);
-        //console.log(gardener.libName);
         assert.ok(gardener.libName === "gardener","libName passed.");
         assert.ok(gardener.shortName === "gn","shortName passed.");
     });
@@ -30,22 +28,35 @@
         assert.ok(ClassA.wb_find("qwe",constUtil.OBJECT) === undefined,"delete a obj from list is ok");
     });
 
-   var ClassC = wb.createCore("ClassC","cc");
-    //console.log("ClassC",ClassC);
+    console.log("wb.WBObject",wb.WBObject);
+    console.log("wb.WBEventDispatcher",wb.WBEventDispatcher);
+
+    var ClassC = wb.createCore("ClassC","cc");
+    console.log("ClassC",ClassC);
     ClassC.CCObject = wb.WBObject.create(ClassC);
     var ccObj = ClassC.CCObject({
-        initialize:function(){},
+        initialize:function(){
+            return "This is ccObj's init.";
+        },
         ccId:""
     });
-    //console.log(ccObj);
-    console.info(ccObj.output());
-    ClassC.CCEventDispatcher = wb.WBEventDispatcher.create(ClassC);
+    console.log(ccObj);
+    //console.info("output:",ccObj.output());
+    //console.info("initialize:",ccObj.initialize());
 
+    ClassC.CCEventDispatcher = wb.WBEventDispatcher.create(ClassC);
     //console.log("ClassC.CCEventDispatcher",ClassC.CCEventDispatcher);
     var ccEventDispatcher = ClassC.CCEventDispatcher();
-    console.log("ccEventDispatcher instance--->"/*,ccEventDispatcher*/);
-    console.info(ccEventDispatcher.output());
-    console.log("internal list:",ClassC.internal_getList(wb.ConstUtil.OBJECT));
-    ccEventDispatcher.addEventListener("abc",function(){});
+    //console.log("ccEventDispatcher instance--->",ccEventDispatcher);
+    //console.info(ccEventDispatcher.output());
+    //console.log("internal list:",ClassC.internal_getList(wb.ConstUtil.OBJECT));
+    //ccEventDispatcher.addEventListener("abc",function(){});
 
-})(WorkerBee,QUnit);
+    ClassC.EventProxy = wb.WBEventProxy;
+    var eventProxy = ClassC.EventProxy();
+    console.log(eventProxy);
+    console.log(eventProxy.on());
+    console.log(eventProxy.off());
+    console.log(eventProxy.trigger());
+
+})(workerBee,QUnit);

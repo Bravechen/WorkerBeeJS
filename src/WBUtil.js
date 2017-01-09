@@ -3,10 +3,10 @@
  */
 (function(root,factory){
     if(typeof defined === 'function' && defined.amd){
-        defined('WBUtil',['WorkerBee'],factory);
+        defined(['workerBee'],factory);
     }else{
-        root.WorkerBee = root.WorkerBee || {};
-        root.WorkerBee.Util = factory(root.WorkerBee);
+        root.workerBee = root.workerBee || {};
+        root.workerBee.Util = factory(root.workerBee);
     }
 })(window || this,function(wb){
     "use strict";
@@ -22,7 +22,5 @@
 
     return{
         isArray:isArray
-
-    }    
-
+    }
 });
