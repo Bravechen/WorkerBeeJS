@@ -8,7 +8,7 @@
         defined("WorkerBee",[],factory);
     }else{
         // Browser globals
-        root.WorkerBee = factory();
+        root.WorkerBee = factory.call(root,[]);
     }
 })(window || this,function(){
     "use strict";
@@ -18,9 +18,9 @@
 //========================================================================
     var nativeCreate = Object.create,
         nativeSlice = Array.prototype.slice,
-        nativeKeys = Object.keys;
-    var CtrFn = function(){};
-    var LEN = "length",
+        nativeKeys = Object.keys,
+        CtrFn = function(){},
+        LEN = "length",
         GU_ID = "guId";
 //========================================================================
     wb.ConstUtil = {
@@ -102,7 +102,6 @@
      * A namespace you want.
      */
     wb.createCore = function(libName,shortName){
-
         var sysList = {
                 object : {length:0},
                 event : {length:0},
@@ -332,12 +331,12 @@
             master:null,
             SEPARATOR:"_",
             /**
-             *
-             * @param type
-             * @param guid
-             * @param handler
-             * @param data
-             * @param scope
+             * 添加一个事件来源对象
+             * @param type {String} [necessary] 事件类型
+             * @param guid {String} [necessary] 监听事件的对象的guid
+             * @param handler {Function} [necessary] 事件监听器
+             * @param data {Object} [optional] 事件返回到监听器的数据对象
+             * @param scope {Object} [optional] 期望的事件监听器中的上下文this指向
              */
             addEventFrom:function(type, guid, handler, data, scope){
                 var id = guid + this.SEPARATOR + type,
@@ -368,11 +367,11 @@
                 }
             },
             /**
-             *
-             * @param type
-             * @param guid
-             * @param handler
-             * @returns {boolean}
+             * 移除事件来源对象
+             * @param type {String} [necessary] 事件类型
+             * @param guid {String} [necessary] 监听事件的对象的guid
+             * @param handler {Function} [necessary] 事件侦听器
+             * @returns {boolean} 移除是否成功
              */
             removeEventFrom:function(type, guid, handler){
                 var id = guid + this.SEPARATOR + type,
@@ -406,10 +405,10 @@
                 return true;
             },
             /**
-             *
-             * @param type
-             * @param guid
-             * @returns {*|Object|undefined}
+             * 获取一个事件源对象
+             * @param type {String} [necessary] 事件类型
+             * @param guid {String} [necessary] 事件监听对象的guid
+             * @returns {*|Object|undefined} 事件源对象
              */
             getEventFrom:function(type,guid){
                 var master = this.master,
@@ -418,10 +417,10 @@
                 return master.wb_find(id,listType);
             },
             /**
-             *
-             * @param type
-             * @param guid
-             * @returns {boolean}
+             * 是否含有事件源
+             * @param type {String} 事件类型
+             * @param guid {String} 事件监听对象的guid
+             * @returns {boolean} 是否含有事件源
              */
             hasEventFrom:function(type,guid){
                 var master = this.master,
@@ -430,10 +429,10 @@
                 return !!master.wb_find(id,listType);
             },
             /**
-             *
-             * @param type
-             * @param guid
-             * @returns {boolean}
+             * 派发一个事件
+             * @param type {String} 事件类型
+             * @param guid {String} 监听事件的对象的guid
+             * @returns {boolean} 派发成功与否
              */
             dispatchEventFrom:function(type,guid){
                 var master = this.master,
@@ -461,6 +460,7 @@
                     //If the scope is not set, the master will be used
                     fn.call(scope?scope:master,event);
                 }
+                return true;
             }
 
         }
@@ -667,8 +667,8 @@
                     return handler.frameId;
                 }
                 var master = this.master,
-                    listType = this.parent.LIST_TYPE;
-                var list = master.wb_listKeys(listType);
+                    listType = this.parent.LIST_TYPE,
+                    list = master.wb_listKeys(listType);
                 for(var key in list){
                     if(list.hasOwnProperty(key) && list[key].handler === handler){
                         return key;
