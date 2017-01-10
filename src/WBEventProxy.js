@@ -12,8 +12,8 @@
 })(window || this,function(wb){
     "use strict";
 
-    var obj = {
-            className:"workerBee.WBEventProxy"
+    var staticObj = {
+            
         },
         prototype = {
             on:function(type,handler,data,scope){
@@ -28,5 +28,5 @@
         },
         WBObject = wb.WBObject;
 
-    return wb.plugin("WBEventProxy",obj,prototype,wb,WBObject);
+    return wb.plugin("WBEventProxy",staticObj,prototype,wb,WBObject);
 });

@@ -44,17 +44,23 @@
     //console.info("output:",ccObj.output());
     //console.info("initialize:",ccObj.initialize());
 
-    ClassC.CCEventDispatcher = wb.WBEventDispatcher.create(ClassC);
+    //ClassC.CCEventDispatcher = wb.WBEventDispatcher.create(ClassC);
     //console.log("ClassC.CCEventDispatcher",ClassC.CCEventDispatcher);
-    var ccEventDispatcher = ClassC.CCEventDispatcher();
+    //var ccEventDispatcher = ClassC.CCEventDispatcher();
     //console.log("ccEventDispatcher instance--->",ccEventDispatcher);
     //console.info(ccEventDispatcher.output());
     //console.log("internal list:",ClassC.internal_getList(wb.ConstUtil.OBJECT));
     //ccEventDispatcher.addEventListener("abc",function(){});
 
     ClassC.EventProxy = wb.WBEventProxy;
-    var eventProxy = ClassC.EventProxy();
+    var eventProxy = ClassC.EventProxy({
+        initialize:function(){
+            return "This is a instance created by EventProxy plugin. ";
+        }
+    });
+    console.log(ClassC.EventProxy.hasEvent);
     console.log(eventProxy);
+    console.log(eventProxy.initialize());
     console.log(eventProxy.on());
     console.log(eventProxy.off());
     console.log(eventProxy.trigger());
