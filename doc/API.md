@@ -58,20 +58,90 @@ WorkerBee版本号
 
 ## 方法
 
-### createObject
+### `createObject()`
 
 创建一个核心对象或者命名空间
 
-### extend
+### `extend()`
 
 - target
 - source
 
-混合2个对象，返回参数target所指向的对象
+混合2个对象，返回参数target所指向的对象。
 
-### guId
+该方法也会被挂载在创建出的自定义命名空间上。
 
-guid生成器，生成一段guid随机字符串
+### `guId()`
+
+guid生成器，生成一段guid随机字符串。
+
+该方法也会被挂载在创建出的自定义命名空间上。
+
+### `plugin()`
+
+创建一个插件
+
+```javascript
+wb.plugin = function(pluginName,staticObj,instancePrototype,master,extendsFactory){};
+```
+
+参数:
+- `pluginName:String` [必须] 插件名称
+- `staticObj:Object` [可选] 插件对象的静态属性或方法
+- `instancePrototype:Object` [可选] 通过插件创建的实例对象的原型
+- `master:Object` [可选] 所属框架或组件库的命名空间，默认是workerBee
+- `extendsFactory:Object` [可选] 继承的工厂模型对象
+
+返回
+
+`pluginFn:Function` 创建好的插件对象工厂，用于实例
+
+例子:
+
+以创建一个EventProxy事件代理对象为例，说明如何创建一个插件，并挂载在命名空间上。
+
+#### 创建插件
+
+```javascript
+//创建
+var staticObj = {
+        hasEvent:function(type){}
+    },
+    prototype = {
+        on:function(type,handler,data,scope){
+            return this;
+        },
+        off:function(type,handler){
+            return this;
+        },
+        trigger:function(type){
+            return this;
+        }
+    },
+    WBObject = wb.WBObject;
+
+wb.plugin("WBEventProxy",staticObj,prototype,wb,WBObject);
+```
+#### 使用插件
+
+```javascript
+//使用
+var eventProxy = wb.WBEventProxy({
+    initialize:function(){
+        return "This is initialize().";
+    }
+});
+//使用实例方法
+eventProxy.initialize();
+//使用原型方法
+eventProxy.on("eventType",function(e){
+
+});
+//使用静态方法
+wb.WBEventProxy.hasEvent("eventType");
+
+```
+该方法也会被挂载在创建出的自定义命名空间上。
 
 ---
 ## 管理对象工厂模型

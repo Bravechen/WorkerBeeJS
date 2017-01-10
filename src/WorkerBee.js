@@ -69,8 +69,8 @@
         }
     };
     /**
-     * 产生一个guid
-     * generate a guid
+     * 产生一个guId
+     * generate a guId
      * @returns {string}
      */
     var guId = function(){
@@ -82,10 +82,6 @@
 
     wb.guId = guId;
 //======================wb.prototype======================================
-    /**
-     *
-     *
-     */
     wb.prototype = {};
 //============================createCore()================================
     /**
@@ -110,7 +106,7 @@
                 event : {length:0},
                 frame : {length:0},
                 log : {length:0},
-                guid:guId()
+                guId:guId()
             },
             includeProto = {
                 //only for debug
@@ -277,8 +273,8 @@
              */
             addObject:function(obj){
                 var master = this.master,listType = this.parent.LIST_TYPE,id;
-                if(!obj || !obj[GU_ID] || this.inGNList((id = obj[GU_ID]))) {
-                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inGNList(id)); //替换成log
+                if(!obj || !obj[GU_ID] || this.inList((id = obj[GU_ID]))) {
+                    console.log("In OM,addObject has error",obj,obj[GU_ID],this.inList(id)); //替换成log
                     return false;
                 }
                 return master.wb_save(id,obj,listType);
@@ -289,7 +285,8 @@
              */
             removeObject:function(id){
                 var master = this.master,listType = this.parent.LIST_TYPE;
-                if(!id || !this.inGNList(id)){
+                if(!id || !this.inList(id)){
+                    console.log("In OM,addObject has error",id,this.inList(id));  //add log
                     return;
                 }
                 master.wb_destroy(id,listType);
@@ -308,7 +305,7 @@
              * @param id
              * @returns {boolean}
              */
-            inGNList:function(id){
+            inList:function(id){
                 var master = this.master,listType = this.parent.LIST_TYPE;
                 return !!master.wb_find(id,listType);
             },
@@ -329,18 +326,19 @@
 //========================WBEventManager==================================
     var WBEventManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.EVENT,
-        prototype:{
-            SEPARATOR:"_",
+        SEPARATOR:"_",
+        prototype:{            
             /**
              * 添加一个事件来源对象
              * @param type {String} [necessary] 事件类型
-             * @param guid {String} [necessary] 监听事件的对象的guid
+             * @param guId {String} [necessary] 监听事件的对象的guId
              * @param handler {Function} [necessary] 事件监听器
              * @param data {Object} [optional] 事件返回到监听器的数据对象
              * @param scope {Object} [optional] 期望的事件监听器中的上下文this指向
              */
-            addEventFrom:function(type, guid, handler, data, scope){
-                var id = guid + this.SEPARATOR + type,
+            addEventFrom:function(type, guId, handler, data, scope){
+                var SEPARATOR = this.parent.SEPARATOR,
+                    id = guId + SEPARATOR + type,
                     listType = this.parent.LIST_TYPE,
                     master = this.master,
                     item = master.wb_find(id,listType) || {filled:false},
@@ -357,7 +355,7 @@
 
                 if(!item.filled){
                     item.type = type;
-                    item.guid = guid;
+                    item.guId = guId;
                     item.handlers = [handlerItem];
                     item.filled = true;
                     master.wb_save(id,item,listType);
@@ -365,28 +363,33 @@
                     handlers = item.handlers;
                     length = handlers.length;
                     handlers[length] = handlerItem;
+                    if(handlers.length>10){
+                        var obj = master.OM.getObject(guId);
+                        console.warn("The obj has too many event listener,reach at "+handler.length+", please consider to use event proxy instead.==>",obj);
+                    }
                 }
             },
             /**
              * 移除事件来源对象
              * @param type {String} [necessary] 事件类型
-             * @param guid {String} [necessary] 监听事件的对象的guid
+             * @param guId {String} [necessary] 监听事件的对象的guId
              * @param handler {Function} [necessary] 事件侦听器
              * @returns {boolean} 移除是否成功
              */
-            removeEventFrom:function(type, guid, handler){
-                var id = guid + this.SEPARATOR + type,
+            removeEventFrom:function(type, guId, handler){
+                var SEPARATOR = this.parent.SEPARATOR,
+                    id = guId + SEPARATOR + type,
                     master = this.master,
                     listType = this.parent.LIST_TYPE,
                     eventFrom = master.wb_find(id,listType),
                     handlers,
                     k=0;
-                if (!eventFrom || handler) {
+                if (!eventFrom || typeof handler !== 'function') {
                     return false;
                 }
                 handlers = eventFrom.handlers;
                 if(handlers && handlers.length>0){
-                    for(var i=0,len=handlers.length;i<len;i++){
+                    for(var len=handlers.length,i=len-1;i>=0;i--){
                         if(handler === handlers[i].cb){
                             handlers[i] = null;
                         }
@@ -408,40 +411,45 @@
             /**
              * 获取一个事件源对象
              * @param type {String} [necessary] 事件类型
-             * @param guid {String} [necessary] 事件监听对象的guid
+             * @param guId {String} [necessary] 事件监听对象的guId
              * @returns {*|Object|undefined} 事件源对象
              */
-            getEventFrom:function(type,guid){
+            getEventFrom:function(type,guId){
                 var master = this.master,
-                    id = guid + this.SEPARATOR + type,
+                    SEPARATOR = this.parent.SEPARATOR,
+                    id = guId + SEPARATOR + type,
                     listType = this.parent.LIST_TYPE;
                 return master.wb_find(id,listType);
             },
             /**
              * 是否含有事件源
              * @param type {String} 事件类型
-             * @param guid {String} 事件监听对象的guid
+             * @param guId {String} 事件监听对象的guId
              * @returns {boolean} 是否含有事件源
              */
-            hasEventFrom:function(type,guid){
+            hasEventFrom:function(type,guId){
                 var master = this.master,
-                    id = guid + this.SEPARATOR + type,
+                    SEPARATOR = this.parent.SEPARATOR,
+                    id = guId + SEPARATOR + type,
                     listType = this.parent.LIST_TYPE;
                 return !!master.wb_find(id,listType);
             },
             /**
              * 派发一个事件
              * @param type {String} 事件类型
-             * @param guid {String} 监听事件的对象的guid
+             * @param guId {String} 监听事件的对象的guId
+             * @param eventData {Object} 随事件发送的数据
              * @returns {boolean} 派发成功与否
              */
-            dispatchEventFrom:function(type,guid){
+            dispatchEventFrom:function(type,guId,eventData){
                 var master = this.master,
-                    id = guid + this.SEPARATOR + type,
+                    SEPARATOR = this.parent.SEPARATOR,
+                    id = guId + SEPARATOR + type,
                     listType = this.parent.LIST_TYPE,
                     eventFrom = master.wb_find(id,listType),handlers,handlerItem,i,len;
                 if(!eventFrom){
                     //log...
+                    console.warn("In dispatchEventFrom,EM dose not find any eventFrom's type is ",type,guId);
                     return false;
                 }
                 handlers = eventFrom.handlers;
@@ -456,6 +464,7 @@
                     scope = handlerItem.scope;
                     event = {
                         type:type,
+                        eventData:eventData,
                         data:data
                     };
                     //If the scope is not set, the master will be used
@@ -786,27 +795,34 @@
         create:function(master){
             var that = this;
             return function(option){
-                var obj = wb.createObject(that.prototype),
-                    className = that.className,
-                    type = className.indexOf("WB")!=-1?className.split('WB')[1]:className,
-                    guid = master.guId();
+                    var obj = wb.createObject(that.prototype),
+                        className = that.className,
+                        type = className.indexOf("WB")!=-1?className.split('WB')[1]:className,
+                        _guId = master.guId();
 
-                obj.fn = that.prototype;
-                obj.className = (this.libName?this.libName+".":"TheFramework")+
-                    (this.shortName?this.shortName.toUpperCase():"")+type;
-                
-                Object.defineProperty(obj,"guId",{
-                    get:function(){
-                        return guid;
+                    obj.fn = that.prototype;
+                    obj.className = (this.libName?this.libName+".":"TheFramework")+
+                        (this.shortName?this.shortName.toUpperCase():"")+type;
+                    
+                    Object.defineProperties(obj,{
+                        guId:{
+                            get:function(){
+                                return _guId;
+                            }
+                        },
+                        master:{
+                            get:function(){
+                                return master;
+                            }
+                        }
+                    });
+        
+                    wb.extend(obj,option);
+                    if(master.OM){
+                        master.OM.addObject(obj);
                     }
-                });
-    
-                wb.extend(obj,option);
-                if(master.OM){
-                    master.OM.addObject(obj);
-                }
-                return obj;
-            };
+                    return obj;
+                };
         }
     };
     wb.WBObjectModel = WBObjectModel;
@@ -830,10 +846,65 @@
     var WBEventDispatcher = WBObject.init({
         className:"WBEventDispatcher"
     },{
-        addEventListener:function(type,handler,scope,data){},
-        removeEventListener:function(type,handler){},
-        hasEventListener:function(type){},
-        dispatchEvent:function(type,data){}
+        /**
+         * 添加事件侦听
+         * @param type {String} [necessary] 事件类型
+         * @param handler {Function} [necessary] 事件处理器
+         * @param data {Object} [optional] 附加数据
+         * @param scope {Object} [optional] 事件处理器中期望的上下文this指向
+         */
+        addEventListener:function(type,handler,data,scope){
+            var EM = this.master.EM,
+                guId = this.guId;
+            if(typeof handler !== 'function'){
+                console.warn("In addEventListener(),The param of handler is error,the handle is ",typeof handler);
+                return;
+            }
+            EM.addEventFrom(type, guId, handler, data, scope);
+        },
+        /**
+         * 移除事件侦听
+         * @param type {String} [necessary] 事件类型
+         * @param handler {Function} [necessary] 事件处理器
+         * @return {Boolean} 是否移除成功
+         */
+        removeEventListener:function(type,handler){
+            var EM = this.master.EM,
+                guId = this.guId,
+                result = false;
+            if(EM.hasEventFrom(type,guId)){
+                result = EM.removeEventFrom(type,guId,handler);
+                if(!result){
+                    console.log("In removeEventListener(),remove handler failed.");
+                }
+            }
+            return result;
+        },
+        /**
+         * 是否含有对某一个事件的侦听
+         * @param type {String} [necessary] 事件类型
+         * @return {Boolean} 是否已对事件进行了侦听
+         */
+        hasEventListener:function(type){
+            var EM = this.master.EM,
+                guId = this.guId;
+            return EM.hasEventFrom(type,guId);
+        },
+        /**
+         * 派发某一个事件
+         * @param type {String} [necessary] 事件类型
+         * @param data {Object} [optional] 伴随事件发送的数据
+         * @return {Boolean} 事件是否发送成功
+         */
+        dispatchEvent:function(type,data){
+            var EM = this.master.EM,
+                guId = this.guId,
+                result = false;
+            if(EM.hasEventFrom(type,guId)){
+                result = EM.dispatchEventFrom(type,guId,data);
+            }
+            return result;
+        }
     });
     /**
      * 事件派发者工厂模型
@@ -847,7 +918,7 @@
      * @param instancePrototype {Object} [optional] 通过插件创建的实例对象的原型
      * @param master {Object} [optional] 所属框架或组件库的命名空间，默认是workerBee
      * @param extendsFactory {Object} [optional] 继承的工厂模型对象
-     * @return {Object} 创建好的插件对象
+     * @return {Function} 创建好的插件对象
      */
     wb.plugin = function(pluginName,staticObj,instancePrototype,master,extendsFactory){
         if(!pluginName){
