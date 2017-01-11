@@ -10,50 +10,6 @@ WorkerBee版本号
 
 常量工具
 
-### prototype
-
-核心原型。用来创建核心或命名空间对象。
-
-创建出来的对象的原型(`__proto__`)含有该对象拥有的方法
-
-#### wb_save
-
-保存一个对象到对应列表中
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
-#### wb_destroy
-
-销毁一个对象到对应列表中
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
-#### wb_find
-
-从对应列表中查找一个对象
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
-#### wb_length
-
-从对应列表的对象数量
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
-#### wb_clear
-
-清空对应列表中的所有对象
-
-使用此方法会直接影响内部列表，需要谨慎使用。
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
-#### wb_listKeys
-
-返回一个由对应列表的键名组成的数组
-
-**此方法已经不再定义在WorkerBee.prototype对象，但仍然在原型中提供。**
-
 ---
 
 ## 方法
@@ -193,7 +149,7 @@ wb.WBEventProxy.hasEvent("eventType");
 
 从对象列表中获取一个对象
 
-##### inGNList
+##### inList
 
 判断一个对象是否在对象列表中
 
