@@ -52,7 +52,7 @@
         assert.ok(true,"gnObj2.guId===>"+gnObj2.guId);
         assert.ok(gnObj.initialize() === "This is gnObj's init.","The method named 'initialize' has been called.");
         assert.ok(gardener.OM.getObject(gnObj.guId) === gnObj,"The instance gnObj had been add into ObjectManager.");
-        console.log(gardener.internal_getSysList());
+        //console.log(gardener.internal_getSysList());
         assert.ok(gardener.OM.inList(gnObj.guId) === true,"The gnObj is in OM's list.");
         assert.ok(gardener.OM.length() > 1,"There are some instances in OM's list.");
         gardener.OM.removeObject(gnObj2.guId);
@@ -63,7 +63,7 @@
             };
         gardener.OM.addObject(obj3);
         assert.ok(gardener.OM.getObject(obj3.guId) === obj3 && gardener.OM.inList(obj3.guId) === true,"Call getObject(),success.");
-        console.log(gardener.internal_getSysList());
+        //console.log(gardener.internal_getSysList());
     });
 
     QUnit.test("create a gn.GNEventListener,then use it to create an instance.",function(assert){
@@ -75,21 +75,35 @@
         assert.ok(typeof gnED.dispatchEvent === 'function','The gnED has a method that be named "dispatchEvent".');
         console.log("gnED",gnED);
         assert.ok(true,gnED.output());
-        console.log(gardener.internal_getList(wb.ConstUtil.EVENT));
         var type = "balalala";
         gnED.addEventListener("balalala",balaHandler,{message:"This is balalala's data."},gnED);
+        gnED.addEventListener("balalala1",balaHandler,{message:"This is balalala's data."},gnED);
+        gnED.addEventListener("balalala1",balaHandler1,{message:"This is balalala's data."},gnED);
+        gnED.addEventListener("balalala2",balaHandler,{message:"This is balalala's data."},gnED);
+        gnED.addEventListener("balalala3",balaHandler,{message:"This is balalala's data."},gnED);
+        console.log(gardener.internal_getList(wb.ConstUtil.EVENT));
+        assert.ok(wb.wb_find(gardener.fid,gnED.guId,wb.ConstUtil.EVENT).length === 4,"EM receive enough event-types");
         assert.ok(gnED.hasEventListener(type,gnED.guId) === true,"The event "+ type + " has been register.");
         assert.ok(gardener.EM.hasEventFrom(type,gnED.guId) === true,"The event "+type+" is in EM's list.");
         assert.ok(gnED.dispatchEvent(type,{message:"This is send data by event."}) === true,"fire the event "+type+",success.");
 
         function balaHandler(e){
-            assert.ok(true,"The event " + e.type + "had been fired.");
+            assert.ok(e.type === type,"The event " + e.type + "had been fired.");
             assert.ok(this === gnED,"This handler's this is right.");
             assert.ok(e.data.message === "This is balalala's data.","e.data is right.");
             assert.ok(e.eventData.message === "This is send data by event.","This is balalala's eventData from the operation of fired.");
-            console.log("In event handler===>",e);
             assert.ok(gnED.removeEventListener(type,balaHandler) === true,"Remove the event type "+type+",success.");
-            console.log("after remove:",gardener.internal_getList(wb.ConstUtil.EVENT));
+            gardener.EM.removeEventFromALL("balalala1",gnED.guId);
+            assert.ok(wb.wb_find(gardener.fid,gnED.guId,wb.ConstUtil.EVENT).length === 2,"EM remove the "+gnED.guId+"'s event all listener,success.");
+            gardener.EM.removeALLEventByGUID(gnED.guId);
+            var removed = !gardener.EM.hasEventFrom("balalala2",gnED.guId) &&
+                !gardener.EM.hasEventFrom("balalala3",gnED.guId) && !wb.wb_find(gardener.fid,gnED.guId,wb.ConstUtil.EVENT);
+            assert.ok(removed === true,"The all event listeners belong to gnED,have been removed,success.");
+            console.log(gardener.internal_getSysList());
+        }
+
+        function balaHandler1(e){
+
         }
     });
 

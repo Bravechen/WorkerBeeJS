@@ -370,7 +370,6 @@
 //========================WBEventManager==================================
     WBEventManager = WBManager.init({
         LIST_TYPE:wb.ConstUtil.EVENT,
-        SEPARATOR:"_",
         prototype:{
             /**
              * 添加一个事件来源对象
@@ -381,36 +380,32 @@
              * @param scope {Object} [optional] 期望的事件监听器中的上下文this指向
              */
             addEventFrom:function(type, guId, handler, data, scope){
-                var SEPARATOR = this.parent.SEPARATOR,
-                    id = guId + SEPARATOR + type,
-                    listType = this.parent.LIST_TYPE,
-                    master = this.master,
-                    fid = master.fid,
-                    item = wb_find(fid,id,listType) || {filled:false},
+                var listType = this.parent.LIST_TYPE,
+                    fid = this.master.fid,
+                    item = wb_find(fid,guId,listType),
                     handlerItem,
-                    handlers,
-                    datas,
-                    length;
+                    list;
 
+                if(!item){
+                    item = {length:0};
+                    wb_save(fid,guId,item,listType);
+                }
+                
                 handlerItem = {
                     cb:handler,
                     data:!data?null:data,
                     scope:scope
                 };
 
-                if(!item.filled){
-                    item.type = type;
-                    item.guId = guId;
-                    item.handlers = [handlerItem];
-                    item.filled = true;
-                    wb_save(fid,id,item,listType);
+                list = item[type];
+                if(!list){
+                    list = [handlerItem];
+                    item[type] = list;
+                    item.length++;
                 }else{
-                    handlers = item.handlers;
-                    length = handlers.length;
-                    handlers[length] = handlerItem;
-                    if(handlers.length>10){
-                        var obj = master.OM.getObject(guId);
-                        console.warn("The obj has too many event listener,reach at "+handler.length+", please consider to use event proxy instead.==>",obj);
+                    list[list.length] = handlerItem;
+                    if(list.length>10){
+                        console.warn("The obj that guId is ",guId," has too many event listener on this type:",type,"reach at "+list.length+", please consider to use event proxy instead.");
                     }
                 }
             },
@@ -422,35 +417,92 @@
              * @returns {boolean} 移除是否成功
              */
             removeEventFrom:function(type, guId, handler){
-                var SEPARATOR = this.parent.SEPARATOR,
-                    id = guId + SEPARATOR + type,
-                    master = this.master,
-                    fid = master.fid,
+                var fid = this.master.fid,
+                    debug = this.master.debug,
                     listType = this.parent.LIST_TYPE,
-                    eventFrom = wb_find(fid,id,listType),
-                    handlers,
-                    k=0;
-                if (!eventFrom || typeof handler !== 'function') {
+                    eventFrom = wb_find(fid,guId,listType),
+                    handlers,len;
+
+                if (!eventFrom || !eventFrom[type] || typeof handler !== 'function') {
+                    if(debug){
+                        console.info("This obj that guId is ",guId,"has not register event listener of ",type," or, the param of handler is not a function.");
+                    }
                     return false;
                 }
-                handlers = eventFrom.handlers;
-                if(handlers && handlers.length>0){
-                    for(var len=handlers.length,i=len-1;i>=0;i--){
-                        if(handler === handlers[i].cb){
-                            handlers[i] = null;
-                        }
-                        if(!handlers[i]){
-                            k++;
+
+                handlers = eventFrom[type];
+                if(handlers){
+                    len = handler.length;
+                    while(len--){
+                        if(handler === handlers[len].cb){
+                            handlers.splice(len,1);
+                            break;
                         }
                     }
                 }
                 //如果处理器列表已为空，移除该事件源对象
-                if(!handlers || handlers.length<=0 || k>=handlers.length){
-                    eventFrom.type = null;
-                    eventFrom.gnId = null;
-                    eventFrom.handlers = null;
-                    eventFrom.filled = null;
-                    wb_destroy(fid,id,listType);
+                if(!handlers || handlers.length<=0){
+                    eventFrom[type] = null;
+                    eventFrom.length--;
+                    if(eventFrom.length<=0){
+                        wb_destroy(fid,guId,listType);
+                    }
+                }
+                return true;
+            },
+            /**
+             * 移除某个对象对某个事件的全部侦听
+             * @param type {String} [necessary] 事件类型
+             * @param guId {String} [necessary] 监听事件的对象的guId
+             * @returns {boolean} 移除是否成功
+             */
+            removeEventFromALL:function(type,guId){
+                var fid = this.master.fid,
+                    listType = this.parent.LIST_TYPE,
+                    eventFrom = wb_find(fid,guId,listType),
+                    handlers,len,item;
+
+                if (!eventFrom) {
+                    return true;
+                }
+                handlers = eventFrom[type];
+                if(handlers && (len = handlers.length)>0){
+                    while(len--){
+                        item = handlers[len];
+                        item.cb = null;
+                        item.data = null;
+                        item.scope = null;
+                        handlers[len] = null;
+                    }
+                }
+                eventFrom[type] = null;
+                eventFrom.length--;
+                if(eventFrom.length<=0){
+                    wb_destroy(fid,guId,listType);
+                }                
+                return true;
+            },
+            /**
+             * 移除某个对象注册的所有事件
+             * @param guId {String} [necessary] 对象的guId
+             * @return {Boolean} 是否移除成功
+             */
+            removeALLEventByGUID:function(guId){
+                var fid = this.master.fid,
+                    listType = this.parent.LIST_TYPE,
+                    eventFrom = wb_find(fid,guId,listType);
+                if(!eventFrom){
+                    return true;
+                }               
+                if(eventFrom.length<=0){
+                    wb_destroy(fid,guId,listType);
+                    return true;
+                }
+
+                for(var key in eventFrom){
+                    if(eventFrom.hasOwnProperty(key) && key!='length'){
+                        this.removeEventFromALL(key,guId);
+                    }
                 }
                 return true;
             },
@@ -462,10 +514,8 @@
              */
             getEventFrom:function(type,guId){
                 var fid = this.master.fid,
-                    SEPARATOR = this.parent.SEPARATOR,
-                    id = guId + SEPARATOR + type,
                     listType = this.parent.LIST_TYPE;
-                return wb_find(fid,id,listType);
+                return wb_find(fid,guId,listType);
             },
             /**
              * 是否含有事件源
@@ -475,10 +525,13 @@
              */
             hasEventFrom:function(type,guId){
                 var fid = this.master.fid,
-                    SEPARATOR = this.parent.SEPARATOR,
-                    id = guId + SEPARATOR + type,
-                    listType = this.parent.LIST_TYPE;
-                return !!wb_find(fid,id,listType);
+                    listType = this.parent.LIST_TYPE,
+                    eventFrom = wb_find(fid,guId,listType);
+                if(eventFrom && eventFrom.length<=0){
+                    wb_destroy(fid,guId,listType);
+                    eventFrom = null;
+                }
+                return !!eventFrom;
             },
             /**
              * 派发一个事件
@@ -490,33 +543,31 @@
             dispatchEventFrom:function(type,guId,eventData){
                 var master = this.master,
                     fid = master.fid,
-                    SEPARATOR = this.parent.SEPARATOR,
-                    id = guId + SEPARATOR + type,
+                    debug = master.debug,
                     listType = this.parent.LIST_TYPE,
-                    eventFrom = wb_find(fid,id,listType),handlers,handlerItem,i,len;
+                    eventFrom = wb_find(fid,guId,listType),
+                    handlers,handlerItem,i,len,fn,data,scope;
+
                 if(!eventFrom){
-                    if(this.master.debug){
-                        console.error("In dispatchEventFrom,EM dose not find any eventFrom's type is ",type,guId);
-                    }         
+                    if(debug){
+                        console.error("In dispatchEventFrom,EM dose not find any event type of ",type," on this obj===> ",guId);
+                    }
                     return false;
                 }
-                handlers = eventFrom.handlers;
-                var fn,data,scope,event;
+
+                handlers = eventFrom[type];
                 for(i=0,len=handlers.length;i<len;i++){
                     handlerItem = handlers[i];
                     fn = handlerItem.cb;
-                    if(!fn || typeof fn !== 'function'){
-                        continue;
-                    }
                     data = handlerItem.data;
                     scope = handlerItem.scope;
-                    event = {
+                    
+                    //If the scope is not set, the master will be used
+                    fn.call(scope?scope:master,{
                         type:type,
                         eventData:eventData,
                         data:data
-                    };
-                    //If the scope is not set, the master will be used
-                    fn.call(scope?scope:master,event);
+                    });
                 }
                 return true;
             }
