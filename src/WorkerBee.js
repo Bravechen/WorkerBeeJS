@@ -3,9 +3,9 @@
  *
  */
 (function(root,factory){
-    if(typeof defined === "function" && defined.amd){
+    if(typeof define === "function" && define.amd){
         // AMD.
-        defined([],factory);
+        define([],factory);
     }else{
         // Browser globals
         root.workerBee = factory();
@@ -615,7 +615,7 @@
              * @param data {Object} [optional] 需要发送到针处理器中的数据集合
              */
             addFrameListener:function(handler,scope,data){
-                var master = this.master
+                var master = this.master,
                     fid = master.fid,
                     listType = this.parent.LIST_TYPE,
                     frameFrom;

@@ -107,4 +107,11 @@
         }
     });
 
+    //使用插件扩展wb：
+    //1.定义好插件，并使用wb.plugin()方法，将插件绑定到wb上。
+    gardener.EventProxy = wb.WBEventProxy;  //2.在创建的命名空间上的属性中，引用wb的插件，实质是引入了一个实例工厂。
+    console.log("gardener.EventProxy:",gardener.EventProxy);
+    var eventProxy = gardener.EventProxy();
+    console.log("eventProxy:",eventProxy);
+
 })(workerBee,QUnit);

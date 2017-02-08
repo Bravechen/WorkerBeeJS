@@ -3,8 +3,8 @@
  * @author Brave Chan 2017.1.9
  */
 ;(function(root,factory){
-    if(typeof defined === "function" && defined.amd){
-        defined(['workerBee'],factory);
+    if(typeof define === "function" && define.amd){
+        define(['workerBee'],factory);
     }else{
         root.workerBee = root.workerBee || {};
         root.workerBee.WBEventProxy = factory(root.workerBee);
