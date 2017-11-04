@@ -3,7 +3,7 @@
  * mixi objects
  */
 function assign(){
-
+  
 }
 //====================================================
 function isArray(){
